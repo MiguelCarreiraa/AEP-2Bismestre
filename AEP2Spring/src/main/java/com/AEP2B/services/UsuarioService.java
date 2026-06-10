@@ -2,59 +2,58 @@ package com.AEP2B.services;
 
 import com.AEP2B.models.UsuarioModel;
 import com.AEP2B.repositories.UsuarioRepository;
+import java.util.List;
+import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Optional;
-
 @Service
 public class UsuarioService {
 
-    @Autowired
-    private UsuarioRepository usuarioRepository;
+  @Autowired
+  private UsuarioRepository usuarioRepository;
 
-    @Autowired
-    private PasswordEncoder encoder;
+  @Autowired
+  private PasswordEncoder encoder;
 
-    public UsuarioModel cadastrarUsuario(UsuarioModel usuario){
+  public UsuarioModel cadastrarUsuario(UsuarioModel usuario) {
 
-        if(usuarioRepository.existsByEmail(usuario.getEmail())){
-            throw new RuntimeException("Email já cadastrado");
-        }
-
-        usuario.setSenha(
-                encoder.encode(usuario.getSenha())
-        );
-
-        return usuarioRepository.save(usuario);
+    if (usuarioRepository.existsByEmail(usuario.getEmail())) {
+      throw new RuntimeException("Email já cadastrado");
     }
 
-    public List<UsuarioModel> listarTodosUsuarios(){
-        return usuarioRepository.findAll();
-    }
+    usuario.setSenha(
+        encoder.encode(usuario.getSenha())
+    );
 
-    public Optional<UsuarioModel> buscarPorId(Long id){
-        return usuarioRepository.findById(id);
-    }
+    return usuarioRepository.save(usuario);
+  }
 
-    public UsuarioModel atualizar(Long id, UsuarioModel usuario){
+  public List<UsuarioModel> listarTodosUsuarios() {
+    return usuarioRepository.findAll();
+  }
 
-        UsuarioModel model =
-                usuarioRepository.findById(id).get();
+  public Optional<UsuarioModel> buscarPorId(Long id) {
+    return usuarioRepository.findById(id);
+  }
 
-        model.setNome(usuario.getNome());
-        model.setCpf(usuario.getCpf());
-        model.setEmail(usuario.getEmail());
-        model.setSenha(usuario.getSenha());
-        model.setTipo(usuario.getTipo());
+  public UsuarioModel atualizar(Long id, UsuarioModel usuario) {
 
-        return usuarioRepository.save(model);
-    }
+    UsuarioModel model =
+        usuarioRepository.findById(id).get();
 
-    public void deletar(Long id){
-        usuarioRepository.deleteById(id);
-    }
+    model.setNome(usuario.getNome());
+    model.setCpf(usuario.getCpf());
+    model.setEmail(usuario.getEmail());
+    model.setSenha(usuario.getSenha());
+    model.setTipo(usuario.getTipo());
+
+    return usuarioRepository.save(model);
+  }
+
+  public void deletar(Long id) {
+    usuarioRepository.deleteById(id);
+  }
 
 }

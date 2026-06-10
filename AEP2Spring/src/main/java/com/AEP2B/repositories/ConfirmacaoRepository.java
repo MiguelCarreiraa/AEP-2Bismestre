@@ -7,6 +7,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ConfirmacaoRepository extends JpaRepository<ConfirmacaoModel, Long> {
 
-    // Verifica se usuário já confirmou esta solicitação
-    boolean existsByUsuarioIdAndSolicitacaoId(Long usuarioId, Long solicitacaoId);
+  // Verifica se usuário já confirmou esta solicitação
+  boolean existsByUsuarioIdAndSolicitacaoId(Long usuarioId, Long solicitacaoId);
 }

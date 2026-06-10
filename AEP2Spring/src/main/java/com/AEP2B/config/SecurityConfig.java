@@ -18,54 +18,54 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableMethodSecurity   // habilita @PreAuthorize nos controllers
 public class SecurityConfig {
 
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        return http
-                .csrf(csrf -> csrf.disable())
-                .cors(Customizer.withDefaults())
-                .authorizeHttpRequests(auth -> auth
+  @Bean
+  public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    return http
+        .csrf(csrf -> csrf.disable())
+        .cors(Customizer.withDefaults())
+        .authorizeHttpRequests(auth -> auth
 
-                        // Swagger e auth
-                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/auth/**").permitAll()
+            // Swagger e auth
+            .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/auth/**").permitAll()
 
-                        // Registro público
-                        .requestMatchers(HttpMethod.POST, "/usuarios").permitAll()
+            // Registro público
+            .requestMatchers(HttpMethod.POST, "/usuarios").permitAll()
 
-                        // Criar solicitação: anônimos podem criar
-                        .requestMatchers(HttpMethod.POST, "/solicitacoes").permitAll()
+            // Criar solicitação: anônimos podem criar
+            .requestMatchers(HttpMethod.POST, "/solicitacoes").permitAll()
 
-                        // Rotas específicas do cidadão — vêm ANTES das genéricas
-                        .requestMatchers(HttpMethod.GET,  "/solicitacoes/minhas").authenticated()
-                        .requestMatchers(HttpMethod.GET,  "/solicitacoes/meus-protocolos").authenticated()
+            // Rotas específicas do cidadão — vêm ANTES das genéricas
+            .requestMatchers(HttpMethod.GET, "/solicitacoes/minhas").authenticated()
+            .requestMatchers(HttpMethod.GET, "/solicitacoes/meus-protocolos").authenticated()
 
-                        // Confirmar: exige autenticação (validação de duplicata feita no service)
-                        .requestMatchers(HttpMethod.PUT, "/solicitacoes/*/confirmar").authenticated()
+            // Confirmar: exige autenticação (validação de duplicata feita no service)
+            .requestMatchers(HttpMethod.PUT, "/solicitacoes/*/confirmar").authenticated()
 
-                        // Perfil
-                        .requestMatchers("/usuarios/perfil").authenticated()
-                        .requestMatchers("/usuarios/senha").authenticated()
+            // Perfil
+            .requestMatchers("/usuarios/perfil").authenticated()
+            .requestMatchers("/usuarios/senha").authenticated()
 
-                        // Busca pública
-                        .requestMatchers(HttpMethod.GET, "/solicitacoes/protocolo/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/solicitacoes/publicas").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/solicitacoes/*/historico").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/solicitacoes/*").permitAll()
+            // Busca pública
+            .requestMatchers(HttpMethod.GET, "/solicitacoes/protocolo/**").permitAll()
+            .requestMatchers(HttpMethod.GET, "/solicitacoes/publicas").permitAll()
+            .requestMatchers(HttpMethod.GET, "/solicitacoes/*/historico").permitAll()
+            .requestMatchers(HttpMethod.GET, "/solicitacoes/*").permitAll()
 
-                        // Resto: autenticado
-                        .anyRequest().authenticated()
-                )
-                .httpBasic(Customizer.withDefaults())
-                .build();
-    }
+            // Resto: autenticado
+            .anyRequest().authenticated()
+        )
+        .httpBasic(Customizer.withDefaults())
+        .build();
+  }
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+  @Bean
+  public PasswordEncoder passwordEncoder() {
+    return new BCryptPasswordEncoder();
+  }
 
-    @Bean
-    public AuthenticationManager authenticationManager(
-            AuthenticationConfiguration config) throws Exception {
-        return config.getAuthenticationManager();
-    }
+  @Bean
+  public AuthenticationManager authenticationManager(
+      AuthenticationConfiguration config) throws Exception {
+    return config.getAuthenticationManager();
+  }
 }

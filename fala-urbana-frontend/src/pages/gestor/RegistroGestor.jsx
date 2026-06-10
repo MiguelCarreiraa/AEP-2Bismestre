@@ -1,0 +1,175 @@
+import { useNavigate, Link } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { useState } from 'react';
+import api from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
+
+// ============================================================
+// NOVA PÁGINA: Registro do Gestor
+// Campos: nome, CPF, email, senha, código de autorização.
+// O código de autorização é validado no frontend (simulado).
+// Em produção real, este código seria validado no backend.
+// Código simulado: GESTOR2024
+// ============================================================
+const CODIGO_AUTORIZACAO = 'GESTOR2024';
+
+function RegistroGestor() {
+  const { login } = useAuth();
+  const navigate = useNavigate();
+  const [erro, setErro] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const { register, handleSubmit, watch, formState: { errors } } = useForm();
+  const senha = watch('senha');
+
+  const onSubmit = async (dados) => {
+    // Validação do código de autorização (simulado no frontend)
+    if (dados.codigoAutorizacao !== CODIGO_AUTORIZACAO) {
+      setErro('Código de autorização inválido. Contate o administrador do sistema.');
+      return;
+    }
+
+    setLoading(true);
+    setErro('');
+
+    try {
+      await api.post('/auth/register', {
+        nome: dados.nome,
+        cpf: dados.cpf,
+        email: dados.email,
+        senha: dados.senha,
+        tipo: 'ROLE_GESTOR',
+      });
+
+      // Login automático após registro
+      const resultado = await login(dados.email, dados.senha);
+      if (resultado.success) {
+        navigate('/gestor');
+      }
+    } catch (error) {
+      if (error.response?.status === 400) {
+        setErro('Este email já está cadastrado.');
+      } else {
+        setErro('Erro ao criar conta. Tente novamente.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-vh-100 d-flex flex-column" style={{ backgroundColor: '#0a2463' }}>
+
+      <div className="text-center py-4">
+        <Link to="/" className="text-white text-decoration-none fs-4 fw-bold">
+          <span style={{ color: '#60a5fa' }}>fala</span>Urbana
+        </Link>
+      </div>
+
+      <div className="flex-grow-1 d-flex align-items-center justify-content-center px-3 py-4">
+        <div className="card shadow-lg" style={{ maxWidth: 480, width: '100%' }}>
+          <div className="card-body p-4">
+
+            <div className="text-center mb-3">
+              <span className="badge bg-warning text-dark px-3 py-2 fs-6">📝 Registro de Gestor</span>
+            </div>
+
+            <h4 className="text-center mb-1 fw-bold">Criar Conta de Gestor</h4>
+            <p className="text-center text-muted small mb-4">
+              É necessário um código de autorização fornecido pelo administrador.
+            </p>
+
+            {erro && <div className="alert alert-danger py-2 small">{erro}</div>}
+
+            <form onSubmit={handleSubmit(onSubmit)}>
+              <div className="mb-3">
+                <label className="form-label fw-semibold">Nome completo *</label>
+                <input type="text"
+                  className={`form-control ${errors.nome ? 'is-invalid' : ''}`}
+                  {...register('nome', { required: 'Nome obrigatório' })} />
+                {errors.nome && <div className="invalid-feedback">{errors.nome.message}</div>}
+              </div>
+
+              <div className="mb-3">
+                <label className="form-label fw-semibold">CPF *</label>
+                <input type="text"
+                  className={`form-control ${errors.cpf ? 'is-invalid' : ''}`}
+                  placeholder="000.000.000-00"
+                  {...register('cpf', { required: 'CPF obrigatório' })} />
+                {errors.cpf && <div className="invalid-feedback">{errors.cpf.message}</div>}
+              </div>
+
+              <div className="mb-3">
+                <label className="form-label fw-semibold">Email institucional *</label>
+                <input type="email"
+                  className={`form-control ${errors.email ? 'is-invalid' : ''}`}
+                  {...register('email', { required: 'Email obrigatório' })} />
+                {errors.email && <div className="invalid-feedback">{errors.email.message}</div>}
+              </div>
+
+              <div className="row">
+                <div className="col-md-6 mb-3">
+                  <label className="form-label fw-semibold">Senha *</label>
+                  <input type="password"
+                    className={`form-control ${errors.senha ? 'is-invalid' : ''}`}
+                    {...register('senha', {
+                      required: 'Senha obrigatória',
+                      minLength: { value: 6, message: 'Mínimo 6 caracteres' }
+                    })} />
+                  {errors.senha && <div className="invalid-feedback">{errors.senha.message}</div>}
+                </div>
+                <div className="col-md-6 mb-3">
+                  <label className="form-label fw-semibold">Confirmar senha *</label>
+                  <input type="password"
+                    className={`form-control ${errors.confirmar ? 'is-invalid' : ''}`}
+                    {...register('confirmar', {
+                      required: 'Confirme a senha',
+                      validate: v => v === senha || 'As senhas não coincidem'
+                    })} />
+                  {errors.confirmar && <div className="invalid-feedback">{errors.confirmar.message}</div>}
+                </div>
+              </div>
+
+              <div className="mb-4">
+                <label className="form-label fw-semibold">
+                  Código de Autorização *
+                  <span className="ms-1 text-muted small fw-normal">(fornecido pelo administrador)</span>
+                </label>
+                <input type="text"
+                  className={`form-control font-monospace ${errors.codigoAutorizacao ? 'is-invalid' : ''}`}
+                  placeholder="XXXXXXXXXX"
+                  style={{ letterSpacing: 3, textTransform: 'uppercase' }}
+                  {...register('codigoAutorizacao', { required: 'Código obrigatório' })} />
+                {errors.codigoAutorizacao && (
+                  <div className="invalid-feedback">{errors.codigoAutorizacao.message}</div>
+                )}
+                <div className="form-text">
+                  💡 Código de demonstração: <code>GESTOR2024</code>
+                </div>
+              </div>
+
+              <button type="submit" className="btn btn-primary w-100 fw-semibold" disabled={loading}>
+                {loading
+                  ? <><span className="spinner-border spinner-border-sm me-2" />Criando conta...</>
+                  : 'Criar Conta de Gestor'}
+              </button>
+            </form>
+
+            <hr className="my-3" />
+            <div className="text-center small">
+              <Link to="/gestor/login" className="text-primary text-decoration-none">
+                Já tenho conta → Fazer login
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="text-center pb-3">
+        <Link to="/" className="text-white-50 small text-decoration-none">← Voltar ao início</Link>
+      </div>
+    </div>
+  );
+}
+
+export default RegistroGestor;

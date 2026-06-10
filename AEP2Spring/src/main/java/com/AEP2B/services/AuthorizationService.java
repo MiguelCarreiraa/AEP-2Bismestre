@@ -10,17 +10,17 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class AuthorizationService
-        implements UserDetailsService {
+    implements UserDetailsService {
 
-    @Autowired
-    private UsuarioRepository usuarioRepository;
+  @Autowired
+  private UsuarioRepository usuarioRepository;
 
-    @Override
-    public UserDetails loadUserByUsername(String email)
-            throws UsernameNotFoundException {
+  @Override
+  public UserDetails loadUserByUsername(String email)
+      throws UsernameNotFoundException {
 
-        return usuarioRepository.findByEmail(email)
-                .orElseThrow(() ->
-                        new UsernameNotFoundException("Usuário não encontrado"));
-    }
+    return usuarioRepository.findByEmail(email)
+        .orElseThrow(() ->
+            new UsernameNotFoundException("Usuário não encontrado"));
+  }
 }

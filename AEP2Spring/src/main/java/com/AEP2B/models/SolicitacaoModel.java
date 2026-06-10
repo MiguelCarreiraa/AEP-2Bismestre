@@ -4,8 +4,21 @@ import com.AEP2B.enums.Categoria;
 import com.AEP2B.enums.LocalTipo;
 import com.AEP2B.enums.Status;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
-import jakarta.persistence.*;
-
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.OrderBy;
+import jakarta.persistence.Table;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,89 +34,146 @@ import java.util.List;
 @Table(name = "TBL_SOLICITACAOS")
 public class SolicitacaoModel {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-    @Column(name = "Numero Protocolo Solicitacao")
-    private String protocolo;
+  @Column(name = "Numero Protocolo Solicitacao")
+  private String protocolo;
 
-    @Column(name = "Descricao Solicitacao")
-    private String descricao;
+  @Column(name = "Descricao Solicitacao")
+  private String descricao;
 
-    @Column(name = "Categoria Solicitacao")
-    @Enumerated(EnumType.STRING)
-    private Categoria categoria;
+  @Column(name = "Categoria Solicitacao")
+  @Enumerated(EnumType.STRING)
+  private Categoria categoria;
 
-    @Column(name = "Tipo Local Solicitacao")
-    @Enumerated(EnumType.STRING)
-    private LocalTipo localTipo;
+  @Column(name = "Tipo Local Solicitacao")
+  @Enumerated(EnumType.STRING)
+  private LocalTipo localTipo;
 
-    @Column(name = "Outro Local Solicitacao")
-    private String localOutro;
+  @Column(name = "Outro Local Solicitacao")
+  private String localOutro;
 
-    @Column(name = "Prioridade Solicitacao")
-    private String prioridade;
+  @Column(name = "Prioridade Solicitacao")
+  private String prioridade;
 
-    @Column(name = "Numero Confirmacoes Solicitacao")
-    private Integer confirmacoes;
+  @Column(name = "Numero Confirmacoes Solicitacao")
+  private Integer confirmacoes;
 
-    @Column(name = "Status Solicitacao")
-    @Enumerated(EnumType.STRING)
-    private Status status;
+  @Column(name = "Status Solicitacao")
+  @Enumerated(EnumType.STRING)
+  private Status status;
 
-    @ManyToOne
-    @JoinColumn(name = "usuario_id")
-    private UsuarioModel usuario;
+  @ManyToOne
+  @JoinColumn(name = "usuario_id")
+  private UsuarioModel usuario;
 
-    @JoinColumn(name = "endereco_id")
-    @OneToOne(cascade = CascadeType.ALL)
-    private EnderecoModel endereco;
+  @JoinColumn(name = "endereco_id")
+  @OneToOne(cascade = CascadeType.ALL)
+  private EnderecoModel endereco;
 
-    // NOVO: lista de histórico vinculada a esta solicitação
-    // mappedBy = "solicitacao" refere ao campo em HistoricoStatusModel
-    @OneToMany(mappedBy = "solicitacao", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JsonManagedReference
-    @OrderBy("data DESC")
-    private List<HistoricoStatusModel> historico = new ArrayList<>();
+  // NOVO: lista de histórico vinculada a esta solicitação
+  // mappedBy = "solicitacao" refere ao campo em HistoricoStatusModel
+  @OneToMany(mappedBy = "solicitacao", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+  @JsonManagedReference
+  @OrderBy("data DESC")
+  private List<HistoricoStatusModel> historico = new ArrayList<>();
 
-    public SolicitacaoModel() {
-    }
+  public SolicitacaoModel() {
+  }
 
-    // --- Getters e Setters ---
+  // --- Getters e Setters ---
 
-    public Long getId() { return id; }
+  public Long getId() {
+    return id;
+  }
 
-    public String getProtocolo() { return protocolo; }
-    public void setProtocolo(String protocolo) { this.protocolo = protocolo; }
+  public String getProtocolo() {
+    return protocolo;
+  }
 
-    public String getDescricao() { return descricao; }
-    public void setDescricao(String descricao) { this.descricao = descricao; }
+  public void setProtocolo(String protocolo) {
+    this.protocolo = protocolo;
+  }
 
-    public Categoria getCategoria() { return categoria; }
-    public void setCategoria(Categoria categoria) { this.categoria = categoria; }
+  public String getDescricao() {
+    return descricao;
+  }
 
-    public LocalTipo getLocalTipo() { return localTipo; }
-    public void setLocalTipo(LocalTipo localTipo) { this.localTipo = localTipo; }
+  public void setDescricao(String descricao) {
+    this.descricao = descricao;
+  }
 
-    public String getLocalOutro() { return localOutro; }
-    public void setLocalOutro(String localOutro) { this.localOutro = localOutro; }
+  public Categoria getCategoria() {
+    return categoria;
+  }
 
-    public String getPrioridade() { return prioridade; }
-    public void setPrioridade(String prioridade) { this.prioridade = prioridade; }
+  public void setCategoria(Categoria categoria) {
+    this.categoria = categoria;
+  }
 
-    public Integer getConfirmacoes() { return confirmacoes; }
-    public void setConfirmacoes(Integer confirmacoes) { this.confirmacoes = confirmacoes; }
+  public LocalTipo getLocalTipo() {
+    return localTipo;
+  }
 
-    public Status getStatus() { return status; }
-    public void setStatus(Status status) { this.status = status; }
+  public void setLocalTipo(LocalTipo localTipo) {
+    this.localTipo = localTipo;
+  }
 
-    public UsuarioModel getUsuario() { return usuario; }
-    public void setUsuario(UsuarioModel usuario) { this.usuario = usuario; }
+  public String getLocalOutro() {
+    return localOutro;
+  }
 
-    public EnderecoModel getEndereco() { return endereco; }
-    public void setEndereco(EnderecoModel endereco) { this.endereco = endereco; }
+  public void setLocalOutro(String localOutro) {
+    this.localOutro = localOutro;
+  }
 
-    public List<HistoricoStatusModel> getHistorico() { return historico; }
-    public void setHistorico(List<HistoricoStatusModel> historico) { this.historico = historico; }
+  public String getPrioridade() {
+    return prioridade;
+  }
+
+  public void setPrioridade(String prioridade) {
+    this.prioridade = prioridade;
+  }
+
+  public Integer getConfirmacoes() {
+    return confirmacoes;
+  }
+
+  public void setConfirmacoes(Integer confirmacoes) {
+    this.confirmacoes = confirmacoes;
+  }
+
+  public Status getStatus() {
+    return status;
+  }
+
+  public void setStatus(Status status) {
+    this.status = status;
+  }
+
+  public UsuarioModel getUsuario() {
+    return usuario;
+  }
+
+  public void setUsuario(UsuarioModel usuario) {
+    this.usuario = usuario;
+  }
+
+  public EnderecoModel getEndereco() {
+    return endereco;
+  }
+
+  public void setEndereco(EnderecoModel endereco) {
+    this.endereco = endereco;
+  }
+
+  public List<HistoricoStatusModel> getHistorico() {
+    return historico;
+  }
+
+  public void setHistorico(List<HistoricoStatusModel> historico) {
+    this.historico = historico;
+  }
 }
