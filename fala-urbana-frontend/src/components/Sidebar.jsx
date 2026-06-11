@@ -1,20 +1,12 @@
 import { Link, useLocation } from 'react-router-dom';
 
-// ============================================================
-// SIMPLIFICADO: removidos todos os submenus do LISTAR.
-// Agora só existe:
-//   🏠 HOME → /gestor
-//   📋 Listar Solicitações → /gestor/solicitacoes (com filtros inline)
-//   ✏️ ATUALIZAR → /gestor/atualizar
-// Os filtros ficam na própria página de listagem.
-// ============================================================
 function Sidebar() {
   const location = useLocation();
 
   const isActive = (path) =>
-    location.pathname === path
-      ? { color: '#2563eb', fontWeight: 700 }
-      : { color: '#475569' };
+    location.pathname === path || location.pathname.startsWith(path + '/')
+      ? { color: '#2563eb', fontWeight: 700, backgroundColor: '#eff6ff' }
+      : { color: '#475569', backgroundColor: 'transparent' };
 
   return (
     <div
@@ -25,10 +17,7 @@ function Sidebar() {
       <Link
         to="/gestor"
         className="text-decoration-none d-flex align-items-center gap-2 py-2 px-2 rounded mb-1"
-        style={{
-          ...isActive('/gestor'),
-          backgroundColor: location.pathname === '/gestor' ? '#eff6ff' : 'transparent',
-        }}>
+        style={isActive('/gestor')}>
         🏠 <span className="fw-semibold">HOME</span>
       </Link>
 
@@ -38,23 +27,18 @@ function Sidebar() {
       <Link
         to="/gestor/solicitacoes"
         className="text-decoration-none d-flex align-items-center gap-2 py-2 px-2 rounded mb-1"
-        style={{
-          ...isActive('/gestor/solicitacoes'),
-          backgroundColor: location.pathname === '/gestor/solicitacoes' ? '#eff6ff' : 'transparent',
-        }}>
+        style={isActive('/gestor/solicitacoes')}>
         📋 <span className="fw-semibold">Listar Solicitações</span>
       </Link>
 
       <hr className="my-2" />
 
-      {/* Atualizar */}
+      {/* Atualizar — agora vai para /gestor/atualizar que abre
+          o formulário de busca por protocolo direto */}
       <Link
         to="/gestor/atualizar"
         className="text-decoration-none d-flex align-items-center gap-2 py-2 px-2 rounded"
-        style={{
-          ...isActive('/gestor/atualizar'),
-          backgroundColor: location.pathname === '/gestor/atualizar' ? '#eff6ff' : 'transparent',
-        }}>
+        style={isActive('/gestor/atualizar')}>
         ✏️ <span className="fw-semibold">Atualizar</span>
       </Link>
     </div>

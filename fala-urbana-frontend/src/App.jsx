@@ -6,8 +6,6 @@ import Home from './pages/public/Home';
 import FAQ from './pages/public/FAQ';
 import DetalhesSolicitacao from './pages/public/DetalhesSolicitacao';
 import CriarSolicitacaoAnonima from './pages/public/CriarSolicitacaoAnonima';
-
-// Roteador inteligente: mostra a página certa baseado em quem está logado
 import NovaSolicitacaoRedirect from './pages/public/NovaSolicitacaoRedirect';
 
 // ---- Páginas do Cidadão ----
@@ -34,8 +32,6 @@ function App() {
         <Route path="/faq" element={<FAQ />} />
         <Route path="/protocolo/:protocolo" element={<DetalhesSolicitacao />} />
         <Route path="/confirmar-solicitacoes" element={<ConfirmarSolicitacoes />} />
-
-        {/* Rota inteligente: anônimo → banner de privacidade | logado → vincula à conta */}
         <Route path="/nova-solicitacao" element={<NovaSolicitacaoRedirect />} />
 
         {/* ===== AUTENTICAÇÃO ===== */}
@@ -63,6 +59,8 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        {/* Listagem */}
         <Route
           path="/gestor/solicitacoes"
           element={
@@ -71,19 +69,25 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        {/* Atualizar pelo menu lateral — abre direto o formulário
+            de busca por protocolo, SEM id na URL              */}
         <Route
-          path="/gestor/solicitacao/:id"
+          path="/gestor/atualizar"
           element={
             <ProtectedRoute role="ROLE_GESTOR">
               <AtualizarSolicitacao />
             </ProtectedRoute>
           }
         />
+
+        {/* Atualizar vindo de um card — recebe o id na URL
+            e já carrega a solicitação automaticamente         */}
         <Route
-          path="/gestor/atualizar"
+          path="/gestor/solicitacao/:id"
           element={
             <ProtectedRoute role="ROLE_GESTOR">
-              <ListarSolicitacoes />
+              <AtualizarSolicitacao />
             </ProtectedRoute>
           }
         />

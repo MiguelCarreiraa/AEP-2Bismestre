@@ -4,13 +4,8 @@ import GestorLayout from '../../components/GestorLayout';
 import StatusBadge from '../../components/StatusBadge';
 import solicitacaoService from '../../services/solicitacaoService';
 
-// ============================================================
-// MODIFICADO: Adicionada busca por protocolo no topo.
-// O gestor pode digitar um protocolo e localizar a solicitação
-// sem precisar navegar para a listagem.
-// ============================================================
 function AtualizarSolicitacao() {
-  const { id } = useParams();
+  const { id } = useParams();     // existe se veio de /gestor/solicitacao/:id
   const navigate = useNavigate();
 
   // Busca por protocolo
@@ -18,13 +13,13 @@ function AtualizarSolicitacao() {
   const [buscando, setBuscando]               = useState(false);
   const [erroBusca, setErroBusca]             = useState('');
 
-  // Dados da solicitação
+  // Dados
   const [solicitacao, setSolicitacao] = useState(null);
   const [historico, setHistorico]     = useState([]);
   const [novoStatus, setNovoStatus]   = useState('ABERTO');
   const [novaPrioridade, setNovaPrio] = useState('MEDIA');
   const [comentario, setComentario]   = useState('');
-  const [loading, setLoading]         = useState(!!id);
+  const [loading, setLoading]         = useState(false);
   const [salvando, setSalvando]       = useState(false);
   const [sucesso, setSucesso]         = useState(false);
   const [erro, setErro]               = useState('');
@@ -38,73 +33,87 @@ function AtualizarSolicitacao() {
     'Solicitação encerrada por duplicidade.',
   ];
 
+  // Se veio com :id na URL (pelo card "Ver Detalhes"), carrega direto
   useEffect(() => {
     if (id) carregarPorId(id);
   }, [id]);
 
   const carregarPorId = async (solId) => {
-    setLoading(true); setErro('');
+    setLoading(true);
+    setErro('');
     try {
       const sol = await solicitacaoService.buscarPorId(solId);
-      carregarSolicitacao(sol);
-      try {
-        const hist = sol.historico?.length > 0
-          ? sol.historico
-          : await solicitacaoService.buscarHistorico(solId);
-        setHistorico(hist);
-      } catch { setHistorico([]); }
+      aplicarSolicitacao(sol);
+      await carregarHistorico(sol);
     } catch {
       setErro('Erro ao carregar solicitação.');
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const carregarSolicitacao = (sol) => {
+  const aplicarSolicitacao = (sol) => {
     setSolicitacao(sol);
     setNovoStatus(sol.status);
     setNovaPrio(sol.prioridade || 'MEDIA');
     setComentario('');
+    setSucesso(false);
+    setErro('');
   };
 
+  const carregarHistorico = async (sol) => {
+    try {
+      const hist = sol.historico?.length > 0
+        ? sol.historico
+        : await solicitacaoService.buscarHistorico(sol.id);
+      setHistorico(hist);
+    } catch {
+      setHistorico([]);
+    }
+  };
+
+  // Busca pelo protocolo digitado
   const handleBuscarProtocolo = async (e) => {
     e.preventDefault();
     if (!buscarProtocolo.trim()) return;
-    setBuscando(true); setErroBusca('');
+    setBuscando(true);
+    setErroBusca('');
     try {
-      const sol = await solicitacaoService.buscarPorProtocolo(buscarProtocolo.trim());
-      carregarSolicitacao(sol);
-      // Carrega o histórico
-      try {
-        const hist = sol.historico?.length > 0
-          ? sol.historico
-          : await solicitacaoService.buscarHistorico(sol.id);
-        setHistorico(hist);
-      } catch { setHistorico([]); }
-      // Atualiza a URL sem recarregar
+      const sol = await solicitacaoService.buscarPorProtocolo(buscarProtocolo.trim().toUpperCase());
+      aplicarSolicitacao(sol);
+      await carregarHistorico(sol);
+      // Atualiza a URL para refletir o id encontrado
       navigate(`/gestor/solicitacao/${sol.id}`, { replace: true });
     } catch {
-      setErroBusca('Protocolo não encontrado.');
+      setErroBusca('Protocolo não encontrado. Verifique e tente novamente.');
       setSolicitacao(null);
-    } finally { setBuscando(false); }
+      setHistorico([]);
+    } finally {
+      setBuscando(false);
+    }
   };
 
   const handleSalvar = async () => {
-    if (!comentario.trim()) { setErro('Insira um comentário.'); return; }
-    setErro(''); setSalvando(true);
+    if (!comentario.trim()) { setErro('Insira um comentário antes de salvar.'); return; }
+    setErro('');
+    setSalvando(true);
     try {
       await solicitacaoService.atualizarStatus(solicitacao.id, novoStatus, comentario);
       setSucesso(true);
       setTimeout(() => navigate('/gestor/solicitacoes'), 1800);
     } catch {
       setErro('Erro ao atualizar. Verifique se o backend está rodando.');
-    } finally { setSalvando(false); }
+    } finally {
+      setSalvando(false);
+    }
   };
 
   const fmt = (d) => d ? new Date(d).toLocaleString('pt-BR') : '—';
 
   const catLabels = {
-    ILUMINACAO:'💡 Iluminação', BURACO:'🕳️ Buraco',
-    LIMPEZA:'🧹 Limpeza', SAUDE:'🏥 Saúde',
-    SEGURANCA:'🔒 Segurança', OUTRO:'📌 Outro',
+    ILUMINACAO: '💡 Iluminação', BURACO: '🕳️ Buraco',
+    LIMPEZA: '🧹 Limpeza',      SAUDE: '🏥 Saúde',
+    SEGURANCA: '🔒 Segurança',  OUTRO: '📌 Outro',
   };
 
   return (
@@ -114,75 +123,102 @@ function AtualizarSolicitacao() {
       <div className="card shadow-sm mb-4">
         <div className="card-body p-3">
           <h6 className="fw-bold mb-2">🔍 Localizar solicitação por protocolo</h6>
-          <form className="d-flex gap-2" onSubmit={handleBuscarProtocolo}>
+          <form className="d-flex gap-2 flex-wrap" onSubmit={handleBuscarProtocolo}>
             <input
               type="text"
               className={`form-control form-control-sm ${erroBusca ? 'is-invalid' : ''}`}
-              style={{ maxWidth: 260 }}
+              style={{ maxWidth: 260, textTransform: 'uppercase' }}
               placeholder="Ex: ABCD1234"
               value={buscarProtocolo}
-              onChange={e => { setBuscarProtocolo(e.target.value); setErroBusca(''); }}
+              onChange={e => {
+                setBuscarProtocolo(e.target.value.toUpperCase());
+                setErroBusca('');
+              }}
             />
             <button type="submit" className="btn btn-primary btn-sm" disabled={buscando}>
-              {buscando ? <span className="spinner-border spinner-border-sm" /> : 'Buscar'}
+              {buscando
+                ? <span className="spinner-border spinner-border-sm" />
+                : 'Buscar'}
             </button>
             {solicitacao && (
-              <button type="button" className="btn btn-outline-secondary btn-sm"
-                      onClick={() => navigate('/gestor/solicitacoes')}>
+              <button
+                type="button"
+                className="btn btn-outline-secondary btn-sm"
+                onClick={() => navigate('/gestor/solicitacoes')}>
                 ← Voltar à listagem
               </button>
             )}
           </form>
-          {erroBusca && <div className="text-danger small mt-1">{erroBusca}</div>}
+          {erroBusca && (
+            <p className="text-danger small mb-0 mt-1">{erroBusca}</p>
+          )}
         </div>
       </div>
 
-      {/* ===== SEM SOLICITAÇÃO SELECIONADA ===== */}
+      {/* ===== ESTADO INICIAL: nenhuma solicitação carregada ===== */}
       {!loading && !solicitacao && !erroBusca && (
-        <div className="text-center py-5 text-muted">
-          <p className="fs-5">Digite um protocolo acima para localizar uma solicitação.</p>
-          <p className="small">Ou acesse a listagem e clique em "Ver Detalhes" em qualquer card.</p>
-          <button className="btn btn-outline-primary btn-sm"
-                  onClick={() => navigate('/gestor/solicitacoes')}>
-            Ir para Listagem
+        <div className="text-center py-5">
+          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>✏️</div>
+          <h5 className="text-muted mb-2">Nenhuma solicitação selecionada</h5>
+          <p className="text-muted small mb-4">
+            Digite um protocolo acima para localizar e atualizar uma solicitação,<br />
+            ou acesse a listagem e clique em <strong>"Ver Detalhes"</strong> em qualquer card.
+          </p>
+          <button
+            className="btn btn-outline-primary btn-sm"
+            onClick={() => navigate('/gestor/solicitacoes')}>
+            📋 Ir para Listagem
           </button>
         </div>
       )}
 
+      {/* Loading */}
       {loading && (
         <div className="text-center py-5">
           <div className="spinner-border text-primary" />
+          <p className="mt-2 text-muted small">Carregando solicitação...</p>
         </div>
       )}
 
-      {/* ===== FORMULÁRIO DE ATUALIZAÇÃO ===== */}
+      {/* ===== FORMULÁRIO ===== */}
       {!loading && solicitacao && (
         <div className="row g-4">
 
+          {/* Coluna do formulário */}
           <div className="col-lg-7">
             <div className="d-flex justify-content-between align-items-center mb-3">
               <h5 className="fw-bold mb-0">Atualizar Solicitação</h5>
-              <button className="btn btn-outline-secondary btn-sm"
-                      onClick={() => navigate(-1)}>
+              <button
+                className="btn btn-outline-secondary btn-sm"
+                onClick={() => navigate(-1)}>
                 ← Voltar
               </button>
             </div>
 
-            {sucesso && <div className="alert alert-success">✅ Atualizado! Redirecionando...</div>}
+            {sucesso && (
+              <div className="alert alert-success">
+                ✅ Atualizado com sucesso! Redirecionando...
+              </div>
+            )}
             {erro && <div className="alert alert-danger">{erro}</div>}
 
-            {/* Dados */}
+            {/* Dados resumidos da solicitação */}
             <div className="card shadow-sm mb-4">
-              <div className="card-header d-flex justify-content-between align-items-center"
-                   style={{ backgroundColor: '#f8fafc' }}>
-                <span className="badge bg-secondary font-monospace">{solicitacao.protocolo}</span>
+              <div
+                className="card-header d-flex justify-content-between align-items-center"
+                style={{ backgroundColor: '#f8fafc' }}>
+                <span className="badge bg-secondary font-monospace">
+                  {solicitacao.protocolo}
+                </span>
                 <StatusBadge status={solicitacao.status} />
               </div>
               <div className="card-body">
-                <div className="row g-2 mb-1">
+                <div className="row g-2 mb-2">
                   <div className="col-6">
                     <span className="small text-muted">Categoria:</span>
-                    <p className="mb-0 small">{catLabels[solicitacao.categoria] || solicitacao.categoria}</p>
+                    <p className="mb-0 small">
+                      {catLabels[solicitacao.categoria] || solicitacao.categoria}
+                    </p>
                   </div>
                   <div className="col-6">
                     <span className="small text-muted">Local:</span>
@@ -202,15 +238,17 @@ function AtualizarSolicitacao() {
               </div>
             </div>
 
-            {/* Form */}
+            {/* Formulário de atualização */}
             <div className="card shadow-sm">
               <div className="card-body p-4">
                 <h6 className="fw-bold mb-3">Registrar Atualização</h6>
 
                 <div className="mb-3">
                   <label className="form-label fw-semibold">Novo Status</label>
-                  <select className="form-select" value={novoStatus}
-                          onChange={e => setNovoStatus(e.target.value)}>
+                  <select
+                    className="form-select"
+                    value={novoStatus}
+                    onChange={e => setNovoStatus(e.target.value)}>
                     <option value="ABERTO">Aberto</option>
                     <option value="TRIAGEM">Em Triagem</option>
                     <option value="EM_EXECUCAO">Em Execução</option>
@@ -221,8 +259,10 @@ function AtualizarSolicitacao() {
 
                 <div className="mb-3">
                   <label className="form-label fw-semibold">Prioridade</label>
-                  <select className="form-select" value={novaPrioridade}
-                          onChange={e => setNovaPrio(e.target.value)}>
+                  <select
+                    className="form-select"
+                    value={novaPrioridade}
+                    onChange={e => setNovaPrio(e.target.value)}>
                     <option value="BAIXA">🟢 Baixa</option>
                     <option value="MEDIA">🟡 Média</option>
                     <option value="ALTA">🔴 Alta</option>
@@ -231,15 +271,22 @@ function AtualizarSolicitacao() {
 
                 <div className="mb-3">
                   <label className="form-label fw-semibold">
-                    Comentário * <span className="text-muted fw-normal small">(obrigatório)</span>
+                    Comentário *
+                    <span className="text-muted fw-normal small ms-1">(obrigatório)</span>
                   </label>
-                  <textarea className="form-control" rows={3}
-                    placeholder="Descreva a ação tomada..."
+                  <textarea
+                    className="form-control"
+                    rows={3}
+                    placeholder="Descreva a ação tomada ou o andamento da solicitação..."
                     value={comentario}
-                    onChange={e => setComentario(e.target.value)} />
+                    onChange={e => setComentario(e.target.value)}
+                  />
+                  {/* Sugestões rápidas */}
                   <div className="mt-2 d-flex flex-wrap gap-1">
                     {sugestoes.map(s => (
-                      <button key={s} type="button"
+                      <button
+                        key={s}
+                        type="button"
                         className="btn btn-outline-secondary btn-sm"
                         style={{ fontSize: '0.71rem' }}
                         onClick={() => setComentario(s)}>
@@ -249,9 +296,10 @@ function AtualizarSolicitacao() {
                   </div>
                 </div>
 
-                <button className="btn btn-primary w-100 fw-semibold"
-                        onClick={handleSalvar}
-                        disabled={salvando || !comentario.trim()}>
+                <button
+                  className="btn btn-primary w-100 fw-semibold"
+                  onClick={handleSalvar}
+                  disabled={salvando || !comentario.trim()}>
                   {salvando
                     ? <><span className="spinner-border spinner-border-sm me-2" />Salvando...</>
                     : 'Salvar Atualização'}
@@ -260,7 +308,7 @@ function AtualizarSolicitacao() {
             </div>
           </div>
 
-          {/* Histórico */}
+          {/* Coluna do histórico */}
           <div className="col-lg-5">
             <div className="card shadow-sm">
               <div className="card-body p-4">
@@ -269,23 +317,30 @@ function AtualizarSolicitacao() {
                   <p className="text-muted small">Nenhuma atualização registrada ainda.</p>
                 ) : (
                   <div className="position-relative ps-4">
-                    <div style={{ position:'absolute', left:'7px', top:4, bottom:4, width:2, backgroundColor:'#e2e8f0' }} />
+                    <div style={{
+                      position: 'absolute', left: '7px', top: 4, bottom: 4,
+                      width: 2, backgroundColor: '#e2e8f0',
+                    }} />
                     {historico.map((item, idx) => (
                       <div key={item.id || idx} className="position-relative mb-4">
                         <div style={{
-                          position:'absolute', left:-22, top:2, width:14, height:14,
-                          borderRadius:'50%', backgroundColor:'#2563eb',
-                          border:'2px solid #fff', boxShadow:'0 0 0 2px #2563eb',
+                          position: 'absolute', left: -22, top: 2,
+                          width: 14, height: 14, borderRadius: '50%',
+                          backgroundColor: '#2563eb',
+                          border: '2px solid #fff',
+                          boxShadow: '0 0 0 2px #2563eb',
                         }} />
                         <div className="d-flex justify-content-between align-items-start mb-1">
                           <StatusBadge status={item.status} />
-                          <span className="text-muted" style={{ fontSize:'0.72rem' }}>
+                          <span className="text-muted" style={{ fontSize: '0.72rem' }}>
                             {fmt(item.data)}
                           </span>
                         </div>
-                        {item.comentario && <p className="mb-0 small">{item.comentario}</p>}
+                        {item.comentario && (
+                          <p className="mb-0 small">{item.comentario}</p>
+                        )}
                         {item.responsavel && (
-                          <p className="mb-0" style={{ fontSize:'0.7rem', color:'#94a3b8' }}>
+                          <p className="mb-0" style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
                             por {item.responsavel}
                           </p>
                         )}
