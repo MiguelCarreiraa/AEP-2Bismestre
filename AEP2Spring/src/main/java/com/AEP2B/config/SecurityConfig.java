@@ -15,47 +15,68 @@ import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity   // habilita @PreAuthorize nos controllers
+@EnableMethodSecurity
 public class SecurityConfig {
 
+  // -------------------------------------------------------------------------
+  // Rotas públicas — documentação e autenticação
+  // -------------------------------------------------------------------------
+
+  // Recursos do Swagger UI (interface HTML, assets e especificação OpenAPI).
+  private static final String[] SWAGGER_WHITELIST = {
+          "/swagger-ui/**",
+          "/swagger-ui.html",
+          "/v3/api-docs/**",
+          "/v3/api-docs.yaml",
+          "/webjars/**"
+  };
+
+  // Endpoints de autenticação e registro, sempre acessíveis.
+  private static final String[] AUTH_WHITELIST = {
+          "/auth/**"
+  };
+
+  // -------------------------------------------------------------------------
+  // Bean principal — cadeia de filtros HTTP
+  // -------------------------------------------------------------------------
+
   @Bean
-  public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+  public SecurityFilterChain filterChain(final HttpSecurity http) throws Exception {
     return http
-        .csrf(csrf -> csrf.disable())
-        .cors(Customizer.withDefaults())
-        .authorizeHttpRequests(auth -> auth
+            .csrf(csrf -> csrf.disable())
+            .cors(Customizer.withDefaults())
+            .authorizeHttpRequests(auth -> auth
 
-            // Swagger e auth
-            .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/auth/**").permitAll()
+                    // -- Swagger e autenticação: sem restrição --------------------
+                    .requestMatchers(SWAGGER_WHITELIST).permitAll()
+                    .requestMatchers(AUTH_WHITELIST).permitAll()
 
-            // Registro público
-            .requestMatchers(HttpMethod.POST, "/usuarios").permitAll()
+                    // -- Registro público de usuário ------------------------------
+                    .requestMatchers(HttpMethod.POST, "/usuarios").permitAll()
 
-            // Criar solicitação: anônimos podem criar
-            .requestMatchers(HttpMethod.POST, "/solicitacoes").permitAll()
+                    // -- Criar solicitação: permitido a anônimos ------------------
+                    .requestMatchers(HttpMethod.POST, "/solicitacoes").permitAll()
 
-            // Rotas específicas do cidadão — vêm ANTES das genéricas
-            .requestMatchers(HttpMethod.GET, "/solicitacoes/minhas").authenticated()
-            .requestMatchers(HttpMethod.GET, "/solicitacoes/meus-protocolos").authenticated()
+                    // -- Cidadão autenticado (específicas antes das genéricas) ----
+                    .requestMatchers(HttpMethod.GET,  "/solicitacoes/minhas").authenticated()
+                    .requestMatchers(HttpMethod.GET,  "/solicitacoes/meus-protocolos").authenticated()
+                    .requestMatchers(HttpMethod.PUT,  "/solicitacoes/*/confirmar").authenticated()
 
-            // Confirmar: exige autenticação (validação de duplicata feita no service)
-            .requestMatchers(HttpMethod.PUT, "/solicitacoes/*/confirmar").authenticated()
+                    // -- Perfil do usuário logado ---------------------------------
+                    .requestMatchers("/usuarios/perfil").authenticated()
+                    .requestMatchers("/usuarios/senha").authenticated()
 
-            // Perfil
-            .requestMatchers("/usuarios/perfil").authenticated()
-            .requestMatchers("/usuarios/senha").authenticated()
+                    // -- Consultas públicas de solicitações -----------------------
+                    .requestMatchers(HttpMethod.GET, "/solicitacoes/protocolo/**").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/solicitacoes/publicas").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/solicitacoes/*/historico").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/solicitacoes/*").permitAll()
 
-            // Busca pública
-            .requestMatchers(HttpMethod.GET, "/solicitacoes/protocolo/**").permitAll()
-            .requestMatchers(HttpMethod.GET, "/solicitacoes/publicas").permitAll()
-            .requestMatchers(HttpMethod.GET, "/solicitacoes/*/historico").permitAll()
-            .requestMatchers(HttpMethod.GET, "/solicitacoes/*").permitAll()
-
-            // Resto: autenticado
-            .anyRequest().authenticated()
-        )
-        .httpBasic(Customizer.withDefaults())
-        .build();
+                    // -- Qualquer outra rota exige autenticação -------------------
+                    .anyRequest().authenticated()
+            )
+            .httpBasic(Customizer.withDefaults())
+            .build();
   }
 
   @Bean
@@ -65,7 +86,7 @@ public class SecurityConfig {
 
   @Bean
   public AuthenticationManager authenticationManager(
-      AuthenticationConfiguration config) throws Exception {
+          final AuthenticationConfiguration config) throws Exception {
     return config.getAuthenticationManager();
   }
 }
