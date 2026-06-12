@@ -107,6 +107,4 @@ Projeto funcional para fins acadêmicos. Possíveis evoluções futuras:
 
 ---
 
-## 👤 Autor
 
-Desenvolvido como projeto acadêmico — UniCesumar.
