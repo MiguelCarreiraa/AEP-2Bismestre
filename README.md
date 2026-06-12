@@ -77,13 +77,6 @@ O backend usa **HTTP Basic Auth**. O frontend armazena `email` e `senha` localme
 
 ---
 
-## 📂 Documentação detalhada
-
-- [`backend/README.md`](backend/README.md) — estrutura da API, endpoints e modelo de dados
-- [`frontend/README.md`](frontend/README.md) — estrutura de páginas, rotas e componentes
-
----
-
 ## 🗺️ Principais telas
 
 - **Home** — busca por protocolo, categorias, criação de solicitação anônima
